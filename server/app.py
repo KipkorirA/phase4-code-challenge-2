@@ -5,9 +5,9 @@ from flask_migrate import Migrate
 from flask import Flask, request, make_response, jsonify
 import os
 
+# Initialize the application
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-DATABASE = os.environ.get(
-    "DB_URI", f"sqlite:///{os.path.join(BASE_DIR, 'app.db')}")
+DATABASE = os.environ.get("DB_URI", f"sqlite:///{os.path.join(BASE_DIR, 'app.db')}")
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE
@@ -55,10 +55,19 @@ def delete_restaurant(id):
 @app.route('/restaurant_pizzas', methods=['POST'])
 def create_restaurant_pizza():
     data = request.get_json()
-    
+
     # Validate incoming data
-    if 'price' not in data or 'pizza_id' not in data or 'restaurant_id' not in data:
+    if not data or 'price' not in data or 'pizza_id' not in data or 'restaurant_id' not in data:
         return jsonify({'errors': ['Missing fields in request.']}), 400
+
+    # Check if the pizza and restaurant exist
+    pizza = Pizza.query.get(data['pizza_id'])
+    restaurant = Restaurant.query.get(data['restaurant_id'])
+
+    if pizza is None:
+        return jsonify({'errors': ['Pizza not found.']}), 404
+    if restaurant is None:
+        return jsonify({'errors': ['Restaurant not found.']}), 404
 
     try:
         new_restaurant_pizza = RestaurantPizza(
