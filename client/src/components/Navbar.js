@@ -10,6 +10,7 @@ function Navbar() {
       </div>
       <nav>
         <Link to="/">Home</Link>
+        <Link to="/restaurants">Restaurants</Link>
       </nav>
     </header>
   );

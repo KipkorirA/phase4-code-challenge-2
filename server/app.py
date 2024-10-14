@@ -4,6 +4,7 @@ from models import db, Restaurant, RestaurantPizza, Pizza
 from flask_migrate import Migrate
 from flask import Flask, request, make_response, jsonify
 import os
+import logging
 
 # Initialize the application
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -13,6 +14,10 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 migrate = Migrate(app, db)
 db.init_app(app)
@@ -30,8 +35,16 @@ def get_pizzas():
 # Retrieve all restaurants
 @app.route('/restaurants', methods=['GET'])
 def get_restaurants():
-    restaurants = Restaurant.query.all()
-    return jsonify([restaurant.to_dict() for restaurant in restaurants])  
+    try:
+        restaurants = Restaurant.query.all()
+        response = jsonify([restaurant.to_dict() for restaurant in restaurants])
+        print(response)  
+        return response
+    except Exception as e:
+        print(f"Error: {str(e)}")  
+        return make_response(jsonify({'error': str(e)}), 500)
+    
+
 
 # Retrieve a specific restaurant by ID
 @app.route('/restaurants/<int:id>', methods=['GET'])
@@ -81,9 +94,11 @@ def create_restaurant_pizza():
 
     except ValueError as e:
         db.session.rollback() 
+        logger.error(f"ValueError: {str(e)}")
         return jsonify({'errors': [str(e)]}), 400
     except Exception as e:
         db.session.rollback() 
+        logger.error(f"Unexpected error: {str(e)}")
         return jsonify({'errors': ['An unexpected error occurred.']}), 500
 
 if __name__ == '__main__':
